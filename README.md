@@ -131,7 +131,7 @@ cd frontend && npm run build
 - `GET /health` — System health with database connectivity
 - `GET /health/ready` — Kubernetes readiness probe
 
-### Memory Banks (planned)
+### Memory Banks
 - `POST /api/v1/banks` — Create bank
 - `GET /api/v1/banks` — List banks (paginated, filtered)
 - `GET /api/v1/banks/{bank_id}` — Get bank

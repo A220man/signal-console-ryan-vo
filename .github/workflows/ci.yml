@@ -13,9 +13,6 @@ env:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
     steps:
       - uses: actions/checkout@v4
       
@@ -24,21 +21,21 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+        working-directory: ./backend
       
       - name: Install dependencies
+        working-directory: ./backend
         run: |
           python -m venv .venv
           .venv/bin/pip install -r requirements.txt
       
       - name: Run backend tests
+        working-directory: ./backend
         run: |
-          PYTHONPATH=backend .venv/bin/python -m pytest backend/tests -v
+          PYTHONPATH=. .venv/bin/python -m pytest tests -v
 
   frontend-tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
       - uses: actions/checkout@v4
       
@@ -47,14 +44,19 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+        working-directory: ./frontend
       
       - name: Install dependencies
+        working-directory: ./frontend
         run: npm ci
       
       - name: Run frontend tests
+        working-directory: ./frontend
         run: npm test
       
       - name: Build frontend
+        working-directory: ./frontend
         run: npm run build
 
   backend-docker:
