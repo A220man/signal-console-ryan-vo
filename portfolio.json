@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "name": "signal-console-ryan-vo",
+  "owner": "A220man",
+  "email": "ryandtvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "summary": "Agent memory management with long-term retention, semantic recall, and consolidation for AI/ML developers.",
+  "workflows": [
+    "Create and manage memory banks with persistent storage",
+    "Ingest conversation turns and extract structured memories with tags",
+    "Search and recall memories with timestamp-aware relevance ranking",
+    "Consolidate memories into higher-level observations and insights"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "version": "1.0.0"
+}
