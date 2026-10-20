@@ -48,5 +48,11 @@ with sync_playwright() as p:
         page.get_by_role('row').filter(has_text=name).get_by_role('button', name='Delete', exact=True).click()
     assert deleted.value.status == 204, deleted.value.text()
     expect(page.get_by_role('row').filter(has_text=name)).to_have_count(0)
-    print(json.dumps({'browser_create':True,'browser_edit':True,'reload':True,'backend_restart_persistence':True,'browser_delete':True,'bank_id':identifier}))
+    # Query actual PostgreSQL after deletion; audit identifiers must survive.
+    audit_query = f"SELECT action FROM audit_logs WHERE bank_id = {int(identifier)} ORDER BY id"
+    audit_actions = subprocess.check_output(
+        ['docker', 'compose', 'exec', '-T', 'postgres', 'psql', '-U', 'signal_console',
+         '-d', 'signal_console', '-At', '-c', audit_query], text=True).splitlines()
+    assert audit_actions == ['CREATE', 'UPDATE', 'DELETE'], audit_actions
+    print(json.dumps({'browser_create':True,'browser_edit':True,'reload':True,'backend_restart_persistence':True,'browser_delete':True,'postgres_audit_retained':True,'bank_id':identifier}))
     browser.close()

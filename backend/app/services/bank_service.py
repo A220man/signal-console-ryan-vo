@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+import json
 
-from app.models.bank import MemoryBank
+from app.models.bank import MemoryBank, AuditLog
 from app.schemas.bank import BankCreate, BankUpdate, BankListParams
 
 
@@ -14,7 +14,17 @@ class BankService:
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    async def create(self, data: BankCreate) -> MemoryBank:
+    def _log_audit(self, bank_id: int | None, action: str, changes: dict | None = None, user_id: str | None = None):
+        """Log an audit entry."""
+        audit = AuditLog(
+            bank_id=bank_id,
+            action=action,
+            changes=json.dumps(changes) if changes else None,
+            user_id=user_id,
+        )
+        self.session.add(audit)
+    
+    async def create(self, data: BankCreate, user_id: str | None = None) -> MemoryBank:
         """Create a new memory bank."""
         bank = MemoryBank(
             name=data.name,
@@ -22,6 +32,12 @@ class BankService:
             config=data.config.model_dump_json() if data.config else "{}",
         )
         self.session.add(bank)
+        await self.session.flush()  # Get bank ID before commit
+        self._log_audit(bank.id, "CREATE", {
+            "name": bank.name,
+            "description": bank.description,
+            "config": bank.config,
+        }, user_id)
         await self.session.commit()
         await self.session.refresh(bank)
         return bank
@@ -60,29 +76,43 @@ class BankService:
         
         return list(banks), total
     
-    async def update(self, bank_id: int, data: BankUpdate) -> Optional[MemoryBank]:
+    async def update(self, bank_id: int, data: BankUpdate, user_id: str | None = None) -> Optional[MemoryBank]:
         """Update a memory bank."""
         bank = await self.get_by_id(bank_id)
         if not bank:
             return None
         
-        if data.name is not None:
+        changes = {}
+        if data.name is not None and data.name != bank.name:
+            changes["name"] = {"old": bank.name, "new": data.name}
             bank.name = data.name
-        if data.description is not None:
+        if data.description is not None and data.description != bank.description:
+            changes["description"] = {"old": bank.description, "new": data.description}
             bank.description = data.description
         if data.config is not None:
-            bank.config = data.config.model_dump_json()
+            new_config = data.config.model_dump_json()
+            if new_config != bank.config:
+                changes["config"] = {"old": bank.config, "new": new_config}
+                bank.config = new_config
         
-        bank.updated_at = datetime.now(timezone.utc)
-        await self.session.commit()
-        await self.session.refresh(bank)
+        if changes:
+            bank.updated_at = datetime.now(timezone.utc)
+            self._log_audit(bank_id, "UPDATE", changes, user_id)
+            await self.session.commit()
+            await self.session.refresh(bank)
         return bank
     
-    async def delete(self, bank_id: int) -> bool:
+    async def delete(self, bank_id: int, user_id: str | None = None) -> bool:
         """Delete a memory bank."""
         bank = await self.get_by_id(bank_id)
         if not bank:
             return False
+        
+        self._log_audit(bank_id, "DELETE", {
+            "name": bank.name,
+            "description": bank.description,
+            "config": bank.config,
+        }, user_id)
         
         await self.session.delete(bank)
         await self.session.commit()

@@ -31,7 +31,7 @@ async def create_bank(
             detail=f"Bank with name '{data.name}' already exists",
         )
     
-    bank = await service.create(data)
+    bank = await service.create(data, user_id="demo-user")
     return _to_response(bank)
 
 
@@ -92,7 +92,7 @@ async def update_bank(
                 detail=f"Bank with name '{data.name}' already exists",
             )
     
-    bank = await service.update(bank_id, data)
+    bank = await service.update(bank_id, data, user_id="demo-user")
     
     if not bank:
         raise HTTPException(
@@ -110,7 +110,7 @@ async def delete_bank(
 ):
     """Delete a memory bank."""
     service = BankService(db)
-    deleted = await service.delete(bank_id)
+    deleted = await service.delete(bank_id, user_id="demo-user")
     
     if not deleted:
         raise HTTPException(

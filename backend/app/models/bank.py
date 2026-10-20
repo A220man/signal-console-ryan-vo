@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime, func, Index
+from sqlalchemy import String, Text, DateTime, func, Index, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
@@ -25,3 +25,26 @@ class MemoryBank(Base):
     
     def __repr__(self) -> str:
         return f"<MemoryBank(id={self.id}, name='{self.name}')>"
+
+
+class AuditLog(Base):
+    """Audit log for tracking changes to memory banks."""
+    
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_logs_bank_id", "bank_id"),
+        Index("ix_audit_logs_created_at", "created_at"),
+    )
+    
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    # Historical identifier deliberately survives deletion of its source bank.
+    bank_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)  # CREATE, UPDATE, DELETE
+    changes: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON of changed fields
+    user_id: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Keycloak user ID
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    
+    def __repr__(self) -> str:
+        return f"<AuditLog(id={self.id}, action='{self.action}', bank_id={self.bank_id})>"

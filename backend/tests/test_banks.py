@@ -3,10 +3,11 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import event
 
 from app.main import create_app
 from app.core.database import Base, get_db
-from app.models.bank import MemoryBank
+from app.models.bank import MemoryBank, AuditLog
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -19,6 +20,12 @@ async def test_engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    @event.listens_for(engine.sync_engine, "connect")
+    def enforce_foreign_keys(connection, _):
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -219,3 +226,49 @@ class TestBanksAPI:
         assert data["config"]["retain_chunk_size"] == 500
         assert data["config"]["enable_auto_consolidation"] is True
         assert data["config"]["consolidation_threshold"] == 50
+    
+    @pytest.mark.asyncio
+    async def test_audit_log_created_on_crud(self, client, test_session):
+        """Test that audit log entries are created for CRUD operations."""
+        # Create bank
+        response = await client.post(
+            "/api/v1/banks",
+            json={"name": "audit-bank", "description": "Test audit"},
+        )
+        assert response.status_code == 201
+        bank_id = response.json()["id"]
+        
+        # Check CREATE audit log
+        result = await test_session.execute(
+            AuditLog.__table__.select().where(AuditLog.bank_id == bank_id).order_by(AuditLog.id)
+        )
+        audits = result.all()
+        assert len(audits) == 1
+        assert audits[0].action == "CREATE"
+        
+        # Update bank
+        response = await client.patch(
+            f"/api/v1/banks/{bank_id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 200
+        
+        # Check UPDATE audit log
+        result = await test_session.execute(
+            AuditLog.__table__.select().where(AuditLog.bank_id == bank_id).order_by(AuditLog.id)
+        )
+        audits = result.all()
+        assert len(audits) == 2
+        assert audits[1].action == "UPDATE"
+        
+        # Delete bank
+        response = await client.delete(f"/api/v1/banks/{bank_id}")
+        assert response.status_code == 204
+        
+        # Check DELETE audit log
+        result = await test_session.execute(
+            AuditLog.__table__.select().where(AuditLog.bank_id == bank_id).order_by(AuditLog.id)
+        )
+        audits = result.all()
+        assert len(audits) == 3
+        assert audits[2].action == "DELETE"

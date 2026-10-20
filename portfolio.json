@@ -4,7 +4,7 @@
   "owner": "A220man",
   "email": "ryandtvo@gmail.com",
   "domain": "AI/ML developer tools",
-  "summary": "Agent memory management with long-term retention, semantic recall, and consolidation for AI/ML developers.",
+  "summary": "Work in progress: signal-console-ryan-vo",
   "workflows": [
     "Create and manage memory banks with persistent storage",
     "Ingest conversation turns and extract structured memories with tags",
@@ -18,5 +18,6 @@
     "gemini",
     "ollama"
   ],
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "status": "work-in-progress"
 }

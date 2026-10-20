@@ -1,3 +1,3 @@
-from app.models.bank import MemoryBank
+from app.models.bank import MemoryBank, AuditLog
 
-__all__ = ["MemoryBank"]
+__all__ = ["MemoryBank", "AuditLog"]

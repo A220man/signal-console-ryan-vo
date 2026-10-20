@@ -1,5 +1,8 @@
 # Signal Console — Ryan Vo
 
+> Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
+
+
 Current version: `1.0.0`.
 
 **Hindsight: Agent Memory That Learns** — Ryan Vo | AI & Machine Learning

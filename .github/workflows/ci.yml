@@ -12,7 +12,7 @@ env:
 
 jobs:
   backend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       
@@ -34,7 +34,7 @@ jobs:
           PYTHONPATH=. .venv/bin/python -m pytest tests -v
 
   frontend-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       
@@ -58,7 +58,7 @@ jobs:
         run: npm run build
 
   backend-docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: backend-tests
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   frontend-docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: frontend-tests
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   compose-browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [backend-tests, frontend-tests]
     timeout-minutes: 15
     steps:
