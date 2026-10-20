@@ -1,0 +1,55 @@
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment files
+.env
+.env.*
+.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# CI
+.github/
+
+# Local agent metadata
+.antigravitycli/
+.omp/
+
+# Test/coverage
+.coverage
+htmlcov/
+coverage/
+
+# Other
+*.tar.gz
+*.tgz

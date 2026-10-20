@@ -197,3 +197,6 @@ Keycloak data persists in `keycloak_data` volume.
 ## License
 
 MIT © Ryan Vo <ryandtvo@gmail.com>
+### Compose verification
+
+The development Compose stack stores memory banks in PostgreSQL. The future-auth Keycloak service uses its own persistent development database; application login remains a planned feature. Hosted CI starts the stack and uses a real browser to create, edit, reload and delete a memory bank, including a backend restart to verify persistence. See `scripts/verify_browser.py`. Runtime verification is pending until that CI job passes; image builds alone do not establish it.
