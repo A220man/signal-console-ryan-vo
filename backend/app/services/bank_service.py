@@ -14,10 +14,11 @@ class BankService:
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    def _log_audit(self, bank_id: int | None, action: str, changes: dict | None = None, user_id: str | None = None):
+    def _log_audit(self, bank_id: int | None, bank_name: str, action: str, changes: dict | None = None, user_id: str | None = None):
         """Log an audit entry."""
         audit = AuditLog(
             bank_id=bank_id,
+            bank_name=bank_name,
             action=action,
             changes=json.dumps(changes) if changes else None,
             user_id=user_id,
@@ -33,7 +34,7 @@ class BankService:
         )
         self.session.add(bank)
         await self.session.flush()  # Get bank ID before commit
-        self._log_audit(bank.id, "CREATE", {
+        self._log_audit(bank.id, bank.name, "CREATE", {
             "name": bank.name,
             "description": bank.description,
             "config": bank.config,
@@ -97,7 +98,7 @@ class BankService:
         
         if changes:
             bank.updated_at = datetime.now(timezone.utc)
-            self._log_audit(bank_id, "UPDATE", changes, user_id)
+            self._log_audit(bank_id, bank.name, "UPDATE", changes, user_id)
             await self.session.commit()
             await self.session.refresh(bank)
         return bank
@@ -108,7 +109,7 @@ class BankService:
         if not bank:
             return False
         
-        self._log_audit(bank_id, "DELETE", {
+        self._log_audit(bank_id, bank.name, "DELETE", {
             "name": bank.name,
             "description": bank.description,
             "config": bank.config,
