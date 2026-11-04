@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Tuple, List
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 import json
@@ -118,3 +118,20 @@ class BankService:
         await self.session.delete(bank)
         await self.session.commit()
         return True
+
+    async def get_audit_logs(self, bank_id: int, page: int = 1, page_size: int = 20) -> Tuple[List[AuditLog], int]:
+        """Get audit logs for a memory bank with pagination."""
+        query = select(AuditLog).where(AuditLog.bank_id == bank_id)
+        
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_query) or 0
+        
+        # Apply pagination
+        query = query.order_by(AuditLog.created_at.desc())
+        query = query.offset((page - 1) * page_size).limit(page_size)
+        
+        result = await self.session.execute(query)
+        audits = result.scalars().all()
+        
+        return list(audits), total

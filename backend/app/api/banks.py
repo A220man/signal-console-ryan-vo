@@ -8,6 +8,8 @@ from app.schemas.bank import (
     BankListParams,
     BankResponse,
     BankListResponse,
+    AuditLogResponse,
+    AuditLogListResponse,
 )
 from app.services.bank_service import BankService
 
@@ -117,6 +119,48 @@ async def delete_bank(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Bank with id {bank_id} not found",
         )
+
+
+
+@router.get("/{bank_id}/audit-logs", response_model=AuditLogListResponse)
+async def get_bank_audit_logs(
+    bank_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get audit logs for a memory bank."""
+    service = BankService(db)
+    
+    # Check if bank exists
+    bank = await service.get_by_id(bank_id)
+    if not bank:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Bank with id {bank_id} not found",
+        )
+    
+    audits, total = await service.get_audit_logs(bank_id, page, page_size)
+    
+    return AuditLogListResponse(
+        items=[
+            AuditLogResponse(
+                id=audit.id,
+                bank_id=audit.bank_id,
+                bank_name=audit.bank_name,
+                action=audit.action,
+                changes=audit.changes,
+                user_id=audit.user_id,
+                created_at=audit.created_at.isoformat(),
+            )
+            for audit in audits
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=(total + page_size - 1) // page_size,
+    )
+
 
 
 def _to_response(bank) -> BankResponse:

@@ -5,6 +5,8 @@ from app.schemas.bank import (
     BankListParams,
     BankResponse,
     BankListResponse,
+    AuditLogResponse,
+    AuditLogListResponse,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "BankListParams",
     "BankResponse",
     "BankListResponse",
+    "AuditLogResponse",
+    "AuditLogListResponse",
 ]

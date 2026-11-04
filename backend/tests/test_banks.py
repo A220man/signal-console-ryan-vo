@@ -272,3 +272,86 @@ class TestBanksAPI:
         audits = result.all()
         assert len(audits) == 3
         assert audits[2].action == "DELETE"
+    @pytest.mark.asyncio
+    async def test_get_bank_audit_logs(self, client, test_session):
+        """Test getting audit logs for a bank."""
+        # Create bank
+        response = await client.post(
+            "/api/v1/banks",
+            json={"name": "audit-log-bank", "description": "Test audit logs"},
+        )
+        assert response.status_code == 201
+        bank_id = response.json()["id"]
+        
+        # Update bank to generate more audit logs
+        response = await client.patch(
+            f"/api/v1/banks/{bank_id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 200
+        
+        # Get audit logs
+        response = await client.get(f"/api/v1/banks/{bank_id}/audit-logs")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 2  # CREATE + UPDATE
+        assert len(data["items"]) == 2
+        assert data["page"] == 1
+        assert data["page_size"] == 20
+        assert data["total_pages"] == 1
+        
+        # Check audit log entries (order may vary in fast tests)
+        actions = [item["action"] for item in data["items"]]
+        assert "CREATE" in actions
+        assert "UPDATE" in actions
+        assert data["items"][0]["bank_id"] == bank_id
+        assert data["items"][1]["bank_id"] == bank_id
+    
+    @pytest.mark.asyncio
+    async def test_get_bank_audit_logs_pagination(self, client, test_session):
+        """Test audit logs pagination."""
+        # Create bank
+        response = await client.post(
+            "/api/v1/banks",
+            json={"name": "audit-page-bank", "description": "Test pagination"},
+        )
+        assert response.status_code == 201
+        bank_id = response.json()["id"]
+        
+        # Make multiple updates
+        for i in range(5):
+            response = await client.patch(
+                f"/api/v1/banks/{bank_id}",
+                json={"description": f"Update {i}"},
+            )
+            assert response.status_code == 200
+        
+        # Get first page
+        response = await client.get(f"/api/v1/banks/{bank_id}/audit-logs?page=1&page_size=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 6  # CREATE + 5 UPDATEs
+        assert len(data["items"]) == 2
+        assert data["page"] == 1
+        assert data["page_size"] == 2
+        assert data["total_pages"] == 3
+        
+        # Get second page
+        response = await client.get(f"/api/v1/banks/{bank_id}/audit-logs?page=2&page_size=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert data["page"] == 2
+        
+        # Get third page
+        response = await client.get(f"/api/v1/banks/{bank_id}/audit-logs?page=3&page_size=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert data["page"] == 3
+    
+    @pytest.mark.asyncio
+    async def test_get_bank_audit_logs_not_found(self, client):
+        """Test getting audit logs for non-existent bank."""
+        response = await client.get("/api/v1/banks/999/audit-logs")
+        assert response.status_code == 404

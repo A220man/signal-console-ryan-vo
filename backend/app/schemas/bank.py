@@ -51,3 +51,25 @@ class BankListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class AuditLogResponse(BaseModel):
+    """Response model for an audit log entry."""
+    id: int
+    bank_id: int
+    bank_name: str
+    action: str  # CREATE, UPDATE, DELETE
+    changes: Optional[str]  # JSON of changed fields
+    user_id: Optional[str]
+    created_at: str  # ISO format
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuditLogListResponse(BaseModel):
+    """Response model for paginated audit log list."""
+    items: list[AuditLogResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
