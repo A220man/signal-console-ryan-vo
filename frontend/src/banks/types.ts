@@ -38,3 +38,20 @@ export interface PaginationParams {
   page_size: number;
   name?: string;
 }
+export interface AuditLog {
+  id: number;
+  bank_id: number;
+  bank_name: string;
+  action: string;
+  changes: string | null;
+  user_id: string | null;
+  created_at: string;
+}
+
+export interface AuditLogListResponse {
+  items: AuditLog[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

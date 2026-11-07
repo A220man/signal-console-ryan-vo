@@ -4,6 +4,7 @@ import type {
   BankCreateRequest,
   BankUpdateRequest,
   PaginationParams,
+  AuditLogListResponse,
 } from './types';
 
 const API_BASE = '/api/v1';
@@ -56,4 +57,13 @@ export const banksApi = {
   async delete(id: number): Promise<void> {
     await fetch(`${API_BASE}/banks/${id}`, { method: 'DELETE' });
   },
+
+  async getAuditLogs(bankId: number, page: number = 1, pageSize: number = 20): Promise<AuditLogListResponse> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('page', page.toString());
+    searchParams.set('page_size', pageSize.toString());
+    
+    return fetchJson<AuditLogListResponse>(`${API_BASE}/banks/${bankId}/audit-logs?${searchParams.toString()}`);
+  },
 };
+
