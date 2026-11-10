@@ -1,8 +1,18 @@
 # Changelog
 
+## 1.5.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.4.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Fixed
+- Fixed `updated_at` timestamp not being properly updated on memory bank updates
+  - SQLite doesn't support `onupdate` with `server_default`, so manual timestamp update added in service layer
+  - Added `updated_at = datetime.now(timezone.utc)` in `BankService.update()` method
+  - Added regression test `test_update_bank_updates_timestamp` to verify timestamp changes on update
 
 ## 1.3.0 — work-in-progress checkpoint
 

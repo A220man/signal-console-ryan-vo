@@ -59,20 +59,19 @@ class BankService:
     
     async def list(self, params: BankListParams) -> tuple[list[MemoryBank], int]:
         """List memory banks with pagination and filtering."""
-        query = select(MemoryBank)
-        
+        stmt = select(MemoryBank)
         if params.name:
-            query = query.where(MemoryBank.name.ilike(f"%{params.name}%"))
+            stmt = stmt.where(MemoryBank.name.ilike(f"%{params.name}%"))
         
-        # Count total
-        count_query = select(func.count()).select_from(query.subquery())
-        total = await self.session.scalar(count_query) or 0
+        # Get total count
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = (await self.session.execute(count_stmt)).scalar_one()
         
         # Apply pagination
-        query = query.order_by(MemoryBank.created_at.desc())
-        query = query.offset((params.page - 1) * params.page_size).limit(params.page_size)
+        stmt = stmt.offset((params.page - 1) * params.page_size).limit(params.page_size)
+        stmt = stmt.order_by(MemoryBank.created_at.desc())
         
-        result = await self.session.execute(query)
+        result = await self.session.execute(stmt)
         banks = result.scalars().all()
         
         return list(banks), total
@@ -121,17 +120,15 @@ class BankService:
 
     async def get_audit_logs(self, bank_id: int, page: int = 1, page_size: int = 20) -> Tuple[List[AuditLog], int]:
         """Get audit logs for a memory bank with pagination."""
-        query = select(AuditLog).where(AuditLog.bank_id == bank_id)
+        stmt = select(AuditLog).where(AuditLog.bank_id == bank_id)
         
-        # Count total
-        count_query = select(func.count()).select_from(query.subquery())
-        total = await self.session.scalar(count_query) or 0
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = (await self.session.execute(count_stmt)).scalar_one()
         
-        # Apply pagination
-        query = query.order_by(AuditLog.created_at.desc())
-        query = query.offset((page - 1) * page_size).limit(page_size)
+        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+        stmt = stmt.order_by(AuditLog.created_at.desc())
         
-        result = await self.session.execute(query)
+        result = await self.session.execute(stmt)
         audits = result.scalars().all()
         
         return list(audits), total

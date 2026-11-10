@@ -171,6 +171,34 @@ class TestBanksAPI:
         data = response.json()
         assert data["description"] == "Updated description"
         assert data["name"] == "test-bank"
+    @pytest.mark.asyncio
+    async def test_update_bank_updates_timestamp(self, client, sample_bank):
+        """Test that updated_at changes when bank is updated."""
+        # Get initial state
+        response = await client.get(f"/api/v1/banks/{sample_bank.id}")
+        assert response.status_code == 200
+        initial_data = response.json()
+        initial_updated_at = initial_data["updated_at"]
+        
+        # Wait a bit to ensure timestamp difference
+        import time
+        time.sleep(0.1)
+        
+        # Update the bank
+        response = await client.patch(
+            f"/api/v1/banks/{sample_bank.id}",
+            json={"description": "Updated description"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated description"
+        
+        # Verify updated_at changed
+        assert data["updated_at"] != initial_updated_at
+        # Verify created_at did not change
+        assert data["created_at"] == initial_data["created_at"]
+
+
     
     @pytest.mark.asyncio
     async def test_update_bank_name_conflict(self, client, test_session):
