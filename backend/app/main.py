@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import init_db
 from app.api import health, banks
+from app.auth.auth_router import router as auth_router
 
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(banks.router)
+    app.include_router(auth_router)  # OIDC Keycloak auth routes
 
     return app
 

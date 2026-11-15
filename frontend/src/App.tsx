@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { BankList } from './banks/BankList'
 import { BankForm } from './banks/BankForm'
 import { BankDetail } from './banks/BankDetail'
+import { AuthProvider } from './auth/auth-context'
+import { AuthRedirect } from './auth/AuthRedirect'
+import { BankNewPage } from './banks/BankNewPage'
+import { BankEditPage } from './banks/BankEditPage'
 import './App.css'
 
 function Nav() {
@@ -145,21 +149,38 @@ function ConsolidationPage() {
 }
 
 function App() {
+  useEffect(() => {
+    // Remove auth-related paths from history on mount
+    const handlePopState = () => {
+      const path = window.location.pathname
+      if (path.startsWith('/auth/')) {
+        window.history.pushState({}, document.title, '/')
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Nav />
-      <main style={{ flex: 1 }}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/banks" element={<BanksPage />} />
-          <Route path="/banks/new" element={<BankNewPage />} />
-          <Route path="/banks/:id" element={<BankDetailPage />} />
-          <Route path="/banks/:id/edit" element={<BankEditPage />} />
-          <Route path="/memories" element={<MemoriesPage />} />
-          <Route path="/recall" element={<RecallPage />} />
-          <Route path="/consolidation" element={<ConsolidationPage />} />
-        </Routes>
-      </main>
+      <AuthRedirect />
+      <AuthProvider>
+        <Nav />
+        <main style={{ flex: 1 }}>
+          <Routes>
+            <Route path="/auth/login" element={<></>} />
+            <Route path="/auth/callback" element={<></>} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/banks" element={<BanksPage />} />
+            <Route path="/banks/new" element={<BankNewPage />} />
+            <Route path="/banks/:id" element={<BankDetailPage />} />
+            <Route path="/banks/:id/edit" element={<BankEditPage />} />
+            <Route path="/memories" element={<MemoriesPage />} />
+            <Route path="/recall" element={<RecallPage />} />
+            <Route path="/consolidation" element={<ConsolidationPage />} />
+          </Routes>
+        </main>
+      </AuthProvider>
     </div>
   )
 }
