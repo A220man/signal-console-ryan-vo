@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user_from_cookie
 from app.core.database import get_db
 from app.schemas.bank import (
     BankCreate,
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/api/v1/banks", tags=["banks"])
 async def create_bank(
     data: BankCreate,
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """Create a new memory bank."""
     service = BankService(db)
@@ -33,7 +35,7 @@ async def create_bank(
             detail=f"Bank with name '{data.name}' already exists",
         )
     
-    bank = await service.create(data, user_id="demo-user")
+    bank = await service.create(data, user_id=user.id)
     return _to_response(bank)
 
 
@@ -43,6 +45,7 @@ async def list_banks(
     page_size: int = Query(20, ge=1, le=100),
     name: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """List memory banks with pagination and optional filtering."""
     service = BankService(db)
@@ -62,6 +65,7 @@ async def list_banks(
 async def get_bank(
     bank_id: int,
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """Get a memory bank by ID."""
     service = BankService(db)
@@ -81,6 +85,7 @@ async def update_bank(
     bank_id: int,
     data: BankUpdate,
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """Update a memory bank."""
     service = BankService(db)
@@ -94,7 +99,7 @@ async def update_bank(
                 detail=f"Bank with name '{data.name}' already exists",
             )
     
-    bank = await service.update(bank_id, data, user_id="demo-user")
+    bank = await service.update(bank_id, data, user_id=user.id)
     
     if not bank:
         raise HTTPException(
@@ -109,10 +114,11 @@ async def update_bank(
 async def delete_bank(
     bank_id: int,
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """Delete a memory bank."""
     service = BankService(db)
-    deleted = await service.delete(bank_id, user_id="demo-user")
+    deleted = await service.delete(bank_id, user_id=user.id)
     
     if not deleted:
         raise HTTPException(
@@ -121,13 +127,13 @@ async def delete_bank(
         )
 
 
-
 @router.get("/{bank_id}/audit-logs", response_model=AuditLogListResponse)
 async def get_bank_audit_logs(
     bank_id: int,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user_from_cookie),
 ):
     """Get audit logs for a memory bank."""
     service = BankService(db)
@@ -160,7 +166,6 @@ async def get_bank_audit_logs(
         page_size=page_size,
         total_pages=(total + page_size - 1) // page_size,
     )
-
 
 
 def _to_response(bank) -> BankResponse:
